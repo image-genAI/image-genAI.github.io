@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Generation</title>
+    <!-- <script src="main.js"></script> -->
+</head>
+<body>
+    <h1>Image Generation</h1>
+
+    <form enctype="multipart/form-data" id="form-data">
+        <table>
+            <tr>
+                <td>
+                    <label for="image">Image</label>
+                </td>
+                <td>:</td>
+                <td>
+                    <input type="file" name="image" id="image" accept="image/*">
+                    <img id="preview" style="width: 150px; margin: 10px 0px 10px 0px;"></img>
+                </td>
+            </tr>
+            
+            <tr>
+                <td>
+                    <label for="gender">Gender</label>
+                </td>
+                <td>:</td>
+                <td>
+                    <select name="gender" id="gender">
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                    </select>
+                </td>
+            </tr>
+            
+            <tr>
+                <td>
+                    <label for="age">Age</label>
+                </td>
+                <td>:</td>
+                <td>
+                    <select name="age" id="age">
+                        <option value="15-20">15-20</option>
+                        <option value="20-25">20-25</option>
+                        <option value="25-30">25-30</option>
+                        <option value="30-35">30-35</option>
+                        <option value="35-40">35-40</option>
+                        <option value="40-45">40-45</option>
+                        <option value="45-50">45-50</option>
+                        <option value="55-60">55-60</option>
+                        <option value="60-65">60-65</option>
+                    </select>
+                </td>
+            </tr>
+
+            <tr>
+                <td>
+                    <label for="music-style">Music Style</label>
+                </td>
+                <td>:</td>
+                <td>
+                    <select name="music-style" id="music-style">
+                        <option value="pop">Pop</option>
+                        <option value="trance">Trance</option>
+                        <option value="rnb">RnB</option>
+                        <option value="disco">Disco</option>
+                        <option value="electro">Electro</option>
+                        <option value="breakbeat">Breakbeat</option>
+                        <option value="hiphop">Hip-Hop</option>
+                        <option value="drumnbass">Drum n Bass</option>
+                        <option value="techno">Techno</option>
+                        <option value="progressive">Progressive</option>
+                    </select>
+                </td>
+            </tr>
+
+            <tr>
+                <td colspan="3">
+                    <button type="submit" id="btn-submit">Submit</button>
+                </td>
+            </tr>
+        </table>
+    </form>
+
+<script>
+    const formField = document.getElementById("form-data");
+    var formData = null;
+    var imgfile = null;
+    
+    formField.addEventListener("submit", (e) => {
+        e.preventDefault();
+        
+        formData = new FormData();
+        var token = null
+
+        formData.append("gender", document.querySelector("#gender").value);
+        formData.append("lowest_age", document.querySelector("#age").value.substring(0,2));
+        formData.append("oldest_age", document.querySelector("#age").value.substring(3,5));
+        formData.append("music_style", document.querySelector("#music-style").value);
+        
+        // console.log("image dari selector", document.querySelector("#image").files[0]);
+        // console.log("value image", document.querySelector("#image").value);
+
+        if (imgfile != null) {
+            formData.append("image", imgfile);
+            // formData.append("image", document.querySelector("#image").value);
+        }
+        
+        // var fileImage = document.getElementById("image").src;
+        // formData.append("image", fileImage);
+        
+        if (formData != null) {
+            var object = {};
+            // formData.forEach((value, key) => object[key] = value);
+            // var json = JSON.stringify(object);
+            // console.log("Form data:", json);
+            formData.forEach((value, key) => {
+                console.log(key, value);
+            });
+        }
+
+        fetch("https://aizone.dev/get-token", {
+            method: "GET",
+            credentials: 'include',
+            headers: {
+                'Access-Control-Allow-Credentials' : 'true'
+            }
+        })
+        .then((response) => {
+            if (!response.ok) {
+                throw new Error("Network response was not ok");
+            }
+            return response.json();  
+        })
+        .then((data) => {
+            // console.log("Token data:", data);  
+            token = data.dynamic_token;  
+            console.log("Extracted token:", token);
+            
+            if (token != null) {
+                console.log("Generating Image...")
+                generate_image(token);
+            }
+            // return token;
+        })
+        .catch((error) => {
+            console.error("Error fetching token:", error);
+        });
+    
+    });
+
+    document.getElementById("image").addEventListener("change", function(event) {
+        imgfile = event.target.files[0];  
+
+        if (imgfile) {
+            // Display the image (optional)
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const imgElement = document.getElementById("preview");
+                imgElement.src = e.target.result;
+                imgElement.style.display = "block";
+            };
+            reader.readAsDataURL(imgfile);
+
+            // You can also upload the file using FormData
+            // const formData = new FormData();
+            // formData.append("image", imgfile); 
+            console.log("Image ready for upload:", imgfile);
+        } else {
+            console.log("No file selected");
+        }
+    });
+
+    function generate_image(dynamic_token){
+        fetch("https://aizone.dev/generate-image",{
+            method: "POST",
+            headers: {
+                'Accept': 'application/json',
+                'x-dynamic-token': dynamic_token,
+                'x-static-token': "b3782288b3dd220c397069a826fb0b4bbbf47ae9e42d856c1da731616fc5827d",
+                'x-application-name': 'NLP'
+            },
+            body: formData
+            // body: JSON.stringify({
+                // image: formData.get("image"),
+                // gender: formData.get("gender"),
+                // lowest_age: formData.get("lowest_age"),
+                // oldest_age: formData.get("oldest_age"),
+                // music_style: formData.get("music_style")
+            // })
+        })
+        .then((response) => {
+            console.log(response);
+            if (!response.ok) {
+                throw new Error("Generate Image response was not ok");
+            }
+            return response.json();  
+        })
+        .then((data) => {
+            console.log("Generated Image:", data);  
+            // token = data.dynamic_token;  
+            // console.log("Extracted token:", token);
+            
+            return token;
+        })
+        .catch((error) => {
+            console.error("Error fetching image:", error);
+        });
+    }
+
+</script>
+</body>
+</html>
